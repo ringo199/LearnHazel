@@ -4,7 +4,11 @@
 
 #include <glad/glad.h>
 
+#include "Hazel/Renderer/Renderer.h"
+
 #include "Hazel/Input.h"
+
+#include <glfw/glfw3.h>
 
 namespace Hazel
 {
@@ -19,6 +23,8 @@ namespace Hazel
 
 		m_Window = std::unique_ptr<Window>(Window::Create());
 		m_Window->SetEventCallback(BIND_EVENT_FN(OnEvent));
+		
+		Renderer::Init();
 
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
@@ -45,7 +51,6 @@ namespace Hazel
 		EventDispatcher dispathcer(e);
 		dispathcer.Dispatch<WindowCloseEvent>(BIND_EVENT_FN(OnWindowClose));
 
-
 		//HZ_CORE_TRACE("{0}", e);
 
 		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin();)
@@ -60,11 +65,12 @@ namespace Hazel
 	{
 		while(m_Running)
 		{
-			glClearColor(0.3,0.5,0.7,1);
-			glClear(GL_COLOR_BUFFER_BIT);
+			float time = glfwGetTime();
+			Timestep timestep = time - m_LastFrameTime;
+			m_LastFrameTime = time;
 
 			for (Layer* layer : m_LayerStack)
-				layer->OnUpdate();
+				layer->OnUpdate(timestep);
 
 			m_ImGuiLayer->Begin();
 			for (Layer* layer : m_LayerStack)
