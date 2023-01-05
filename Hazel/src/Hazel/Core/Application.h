@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core.h"
+#include "Hazel/Core/Base.h"
 
 #include "Window.h"
 #include "Hazel/Core/LayerStack.h"
@@ -16,7 +16,7 @@ namespace Hazel
 	class Application
 	{
 	public:
-		Application();
+		Application(const std::string& name = "Hazel Engine");
 		virtual ~Application();
 
 		void Run();
@@ -27,6 +27,10 @@ namespace Hazel
 		void PushOverlay(Layer* layer);
 
 		inline Window& GetWindow() { return *m_Window; }
+
+		void Close();
+
+		ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
 
 		inline static Application& Get() { return *s_Instance; }
 	private:

@@ -2,6 +2,8 @@
 
 #ifdef HZ_PLATFORM_WINDOWS
 
+// #pragma comment(linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
+
 extern Hazel::Application* Hazel::CreateApplication();
 
 int main(int argc, char** argv)

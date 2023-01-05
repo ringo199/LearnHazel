@@ -1,11 +1,17 @@
-# Directores
-.vs/
-bin/
+
+# Binaries
+**/bin/
+!vendor/premake/bin/
 bin-int/
 
-# Files
-*.user
-*.vcxproj
-*.vcxproj.filters
-*.sln
-Sandbox/HazelProfile-*.json
+# Hazel files
+*.log
+
+# Visual Studio files and folder
+.vs/
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user
+
+**HazelProfile-*.json
