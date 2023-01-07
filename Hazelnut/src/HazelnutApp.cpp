@@ -5,21 +5,25 @@
 
 #include "EditorLayer.h"
 
-class Hazelnut : public Hazel::Application
-{
-public:
-	Hazelnut()
-		: Application("Hazelnut")
+namespace Hazel {
+
+	class Hazelnut : public Application
 	{
-		PushLayer(new Hazel::EditorLayer());
+	public:
+		Hazelnut(ApplicationCommandLineArgs args)
+			: Application("Hazelnut", args)
+		{
+			PushLayer(new EditorLayer());
+		}
+
+		~Hazelnut()
+		{
+		}
+	};
+
+	Application* CreateApplication(ApplicationCommandLineArgs args)
+	{
+		return new Hazelnut(args);
 	}
 
-	~Hazelnut()
-	{
-	}
-};
-
-Hazel::Application *Hazel::CreateApplication()
-{
-	return new Hazelnut();
 }

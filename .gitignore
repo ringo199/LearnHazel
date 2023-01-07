@@ -15,3 +15,9 @@ bin-int/
 **.vcxproj.user
 
 **HazelProfile-*.json
+
+
+# Directories
+Hazel/vendor/VulkanSDK
+Hazelnut/assets/cache
+scripts/__pycache__

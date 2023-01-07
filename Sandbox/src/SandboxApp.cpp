@@ -22,7 +22,7 @@ public:
 
 };
 
-Hazel::Application* Hazel::CreateApplication()
+Hazel::Application* Hazel::CreateApplication(Hazel::ApplicationCommandLineArgs args)
 {
 	return new Sandbox();
 }
