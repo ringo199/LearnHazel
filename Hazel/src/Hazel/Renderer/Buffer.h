@@ -42,7 +42,7 @@ namespace Hazel
 
 		}
 
-		uint32_t GetElementCount() const
+		uint32_t GetComponentCount() const
 		{
 			switch (Type)
 			{
