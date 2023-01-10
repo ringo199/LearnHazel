@@ -1,7 +1,4 @@
-//--------------------------
-// - Hazel 2D -
-// Renderer2D Quad Shader
-// --------------------------
+// Basic Texture Shader
 
 #type vertex
 #version 450 core
@@ -98,7 +95,10 @@ void main()
 		case 30: texColor *= texture(u_Textures[30], Input.TexCoord * Input.TilingFactor); break;
 		case 31: texColor *= texture(u_Textures[31], Input.TexCoord * Input.TilingFactor); break;
 	}
-	o_Color = texColor;
 
-	v_EntityID = v_EntityID;
+	if (texColor.a == 0.0)
+		discard;
+
+	o_Color = texColor;
+	o_EntityID = v_EntityID;
 }

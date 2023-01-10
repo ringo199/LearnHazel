@@ -9,6 +9,7 @@ Entities:
       Scale: [0.361159712, 0.375572056, 0.848135769]
     SpriteRendererComponent:
       Color: [1, 1, 1, 1]
+      TilingFactor: 1
     Rigidbody2DComponent:
       BodyType: Dynamic
       FixedRotation: false
@@ -28,6 +29,7 @@ Entities:
       Scale: [6.74198389, 0.460680008, 0.999999404]
     SpriteRendererComponent:
       Color: [0.949806929, 0.455301404, 0.0660097376, 1]
+      TilingFactor: 1
     Rigidbody2DComponent:
       BodyType: Static
       FixedRotation: false
@@ -47,6 +49,8 @@ Entities:
       Scale: [0.361159682, 0.375572085, 0.848135769]
     SpriteRendererComponent:
       Color: [1, 1, 1, 1]
+      TexturePath: assets\textures\QQ½ØÍ¼20221212131557.png
+      TilingFactor: 1
     Rigidbody2DComponent:
       BodyType: Dynamic
       FixedRotation: false
@@ -105,6 +109,7 @@ Entities:
       Scale: [6.74196863, 0.46067813, 0.999998987]
     SpriteRendererComponent:
       Color: [0.949806929, 0.455301404, 0.0660097376, 1]
+      TilingFactor: 1
     Rigidbody2DComponent:
       BodyType: Static
       FixedRotation: false

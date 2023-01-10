@@ -1,17 +1,14 @@
 #include "EditorLayer.h"
+#include "Hazel/Scene/SceneSerializer.h"
+#include "Hazel/Utils/PlatformUtils.h"
+#include "Hazel/Math/Math.h"
 
 #include "imgui/imgui.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "Hazel/Scene/SceneSerializer.h"
-
-#include "Hazel/Utils/PlatformUtils.h"
-
 #include "ImGuizmo.h"
-
-#include "Hazel/Math/Math.h"
 
 namespace Hazel
 {
@@ -40,7 +37,7 @@ namespace Hazel
         m_EditorScene = CreateRef<Scene>();
         m_ActiveScene = m_EditorScene;
 
-        auto commandLineArgs = Application::Get().GetCommandLineArgs();
+        auto commandLineArgs = Application::Get().GetSpecification().CommandLineArgs;
         if (commandLineArgs.Count > 1)
         {
             auto sceneFilePath = commandLineArgs[1];
@@ -50,54 +47,7 @@ namespace Hazel
 
         m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 
-#if 0
-
-        auto square = m_ActiveScene->CreateEntity("Green Square");
-        square.AddComponent<SpriteRendererComponent>(glm::vec4{0.0f, 1.0f, 0.0f, 1.0f});
-
-        auto redSquare = m_ActiveScene->CreateEntity("Red Square");
-        redSquare.AddComponent<SpriteRendererComponent>(glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
-
-        auto cameraEntity = m_ActiveScene->CreateEntity("Camera A");
-        cameraEntity.AddComponent<CameraComponent>().Primary = true;
-
-        auto secondCameraEntity = m_ActiveScene->CreateEntity("Camera B");
-        secondCameraEntity.AddComponent<CameraComponent>().Primary = false;
-
-        class CameraController : public ScriptableEntity
-        {
-        public:
-            void OnCreate()
-            {
-                auto& translation = GetComponent<TransformComponent>().Translation;
-                translation.x = rand() % 10 - 5.0f;
-            }
-
-            void OnDestroy()
-            {
-
-            }
-
-            void OnUpdate(Timestep ts)
-            {
-                auto& translation = GetComponent<TransformComponent>().Translation;
-                float speed = 5.0f;
-
-                if (Input::IsKeyPressed(Key::A))
-                    translation.x -= speed * ts;
-                if (Input::IsKeyPressed(Key::D))
-                    translation.x += speed * ts;
-                if (Input::IsKeyPressed(Key::W))
-                    translation.y += speed * ts;
-                if (Input::IsKeyPressed(Key::S))
-                    translation.y -= speed * ts;
-            }
-        };
-
-        secondCameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-        cameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-
-#endif // 
+        Renderer2D::SetLineWidth(4.0f);
         m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 
     }
@@ -249,6 +199,9 @@ namespace Hazel
 
                 if (ImGui::MenuItem("Open...", "Ctrl+O"))
                     OpenScene();
+
+                if (ImGui::MenuItem("Save", "Ctrl+S"))
+                    SaveScene();
 
                 if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S"))
                     SaveSceneAs();
@@ -475,7 +428,10 @@ namespace Hazel
 
     void EditorLayer::OnEvent(Event& e)
     {
-        m_EditorCamera.OnEvent(e);
+        if (m_SceneState == SceneState::Edit)
+        {
+            m_EditorCamera.OnEvent(e);
+        }
 
         EventDispatcher dispatcher(e);
         dispatcher.Dispatch<KeyPressedEvent>(HZ_BIND_EVENT_FN(EditorLayer::OnKeyPressed));
@@ -484,7 +440,7 @@ namespace Hazel
     }
     bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
     {
-        if (e.GetRepeatCount() > 0)
+        if (e.IsRepeat())
             return false;
 
         bool control = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
@@ -610,6 +566,13 @@ namespace Hazel
                     Renderer2D::DrawCircle(transform, glm::vec4(0, 1, 0, 1), 0.05f);
                 }
             }
+        }
+
+        // Draw selected entity outline 
+        if (Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity())
+        {
+            const TransformComponent& transform = selectedEntity.GetComponent<TransformComponent>();
+            Renderer2D::DrawRect(transform.GetTransform(), glm::vec4(1.0f, 0.5f, 0.0f, 1.0f));
         }
 
         Renderer2D::EndScene();
