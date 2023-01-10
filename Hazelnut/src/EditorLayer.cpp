@@ -15,6 +15,7 @@
 
 namespace Hazel
 {
+    extern const std::filesystem::path g_AssetPath;
 
     EditorLayer::EditorLayer()
         : Layer("EditorLayer")
@@ -25,6 +26,10 @@ namespace Hazel
     {
         HZ_PROFILE_FUNCTION();
 
+        m_IconPlay = Texture2D::Create("Resources/Icons/PlayButton.png");
+        m_IconSimulate = Texture2D::Create("Resources/Icons/SimulateButton.png");
+        m_IconStop = Texture2D::Create("Resources/Icons/StopButton.png");
+
         FramebufferSpecification fbSpec;
         fbSpec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth };
         fbSpec.Width = Application::Get().GetWindow().GetWidth();
@@ -32,7 +37,8 @@ namespace Hazel
 
         m_Framebuffer = Framebuffer::Create(fbSpec);
 
-        m_ActiveScene = CreateRef<Scene>();
+        m_EditorScene = CreateRef<Scene>();
+        m_ActiveScene = m_EditorScene;
 
         auto commandLineArgs = Application::Get().GetCommandLineArgs();
         if (commandLineArgs.Count > 1)
@@ -115,10 +121,6 @@ namespace Hazel
             m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
         }
 
-        // Update
-        if (m_ViewportFocused)
-            m_EditorCamera.OnUpdate(ts);
-
         // Render
         // Reset stats here
         Renderer2D::ResetStats();
@@ -129,7 +131,33 @@ namespace Hazel
         // Clear our entity ID attachment to -1
         m_Framebuffer->ClearAttachment(1, -1);
 
-        m_ActiveScene->OnUpdateEditor(ts, m_EditorCamera);
+        switch (m_SceneState)
+        {
+            case EditorLayer::SceneState::Edit:
+            {
+                // Update
+                if (m_ViewportFocused)
+                    m_EditorCamera.OnUpdate(ts);
+
+                m_ActiveScene->OnUpdateEditor(ts, m_EditorCamera);
+                break;
+            }
+            case EditorLayer::SceneState::Simulate:
+            {
+                // Update
+                if (m_ViewportFocused)
+                    m_EditorCamera.OnUpdate(ts);
+
+                m_ActiveScene->OnUpdateSimulation(ts, m_EditorCamera);
+                break;
+            }
+            case EditorLayer::SceneState::Play:
+            {
+                m_ActiveScene->OnUpdateRuntime(ts);
+                break;
+            }
+        }
+
 
         auto [mx, my] = ImGui::GetMousePos();
         mx -= m_ViewportBounds[0].x;
@@ -147,6 +175,8 @@ namespace Hazel
             m_HoveredEntity = pixelData == -1 ? Entity() : Entity((entt::entity)pixelData, m_ActiveScene.get());
 
         }
+
+        OnOverlayRender();
 
         m_Framebuffer->Unbind();
     }
@@ -233,6 +263,7 @@ namespace Hazel
         }
 
         m_SceneHierarchyPanel.OnImGuiRender();
+        m_ContentBrowerPanel.OnImGuiRender();
 
         ImGui::Begin("Stats");
 
@@ -249,6 +280,10 @@ namespace Hazel
         ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
         ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 
+        ImGui::End();
+
+        ImGui::Begin("Settings");
+        ImGui::Checkbox("Show physics colliders", &m_ShowPhysicsColliders);
         ImGui::End();
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
@@ -268,8 +303,18 @@ namespace Hazel
         m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
 
         uint32_t textureID = m_Framebuffer->GetColorAttachmentRendererID();
-
         ImGui::Image(reinterpret_cast<void*>(textureID), ImVec2{ viewportPanelSize.x, viewportPanelSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+            {
+                const wchar_t* path = (const wchar_t*)payload->Data;
+                OpenScene(std::filesystem::path(g_AssetPath) / path);
+            }
+
+            ImGui::EndDragDropTarget();
+        }
 
         // Gizmos
         Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
@@ -323,8 +368,109 @@ namespace Hazel
         ImGui::End();
         ImGui::PopStyleVar();
 
+        UI_Toolbar();
+
         ImGui::End();
 
+    }
+
+    void EditorLayer::OnScenePlay()
+    {
+        if (m_SceneState == SceneState::Simulate)
+            OnSceneStop();
+
+        m_SceneState = SceneState::Play;
+
+        m_ActiveScene = Scene::Copy(m_EditorScene);
+        m_ActiveScene->OnRuntimeStart();
+
+        m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+    }
+
+    void EditorLayer::OnSceneSimulate()
+    {
+        if (m_SceneState == SceneState::Play)
+            OnSceneStop();
+
+        m_SceneState = SceneState::Simulate;
+
+        m_ActiveScene = Scene::Copy(m_EditorScene);
+        m_ActiveScene->OnSimulationStart();
+
+        m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+    }
+
+    void EditorLayer::OnSceneStop()
+    {
+        HZ_CORE_ASSERT(m_SceneState == SceneState::Play || m_SceneState == SceneState::Simulate);
+
+        if (m_SceneState == SceneState::Play)
+            m_ActiveScene->OnRuntimeStop();
+        else if (m_SceneState == SceneState::Simulate)
+            m_ActiveScene->OnSimulationStop();
+
+        m_SceneState = SceneState::Edit;
+        m_ActiveScene = m_EditorScene;
+
+        m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+    }
+
+    void EditorLayer::OnDuplicateEntity()
+    {
+        if (m_SceneState != SceneState::Edit)
+            return;
+
+        Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
+        if (selectedEntity)
+            m_EditorScene->DuplicateEntity(selectedEntity);
+    }
+
+    void EditorLayer::UI_Toolbar()
+    {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+        auto& colors = ImGui::GetStyle().Colors;
+        const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
+        const auto& buttonActive = colors[ImGuiCol_ButtonActive];
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
+        
+        ImGui::Begin("##toolbar", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+        bool toobarEnabled = (bool)m_ActiveScene;
+
+        ImVec4 tintColor = ImVec4(1, 1, 1, 1);
+        if (!toobarEnabled)
+            tintColor.w = 0.5f;
+
+        float size = ImGui::GetWindowHeight() - 4.0f;
+        {
+            Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate) ? m_IconPlay : m_IconStop;
+            ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+            if (ImGui::ImageButton((ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0, ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toobarEnabled)
+            {
+                if (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Simulate)
+                    OnScenePlay();
+                else if (m_SceneState == SceneState::Play)
+                    OnSceneStop();
+            }
+        }
+        ImGui::SameLine();
+        {
+            Ref<Texture2D> icon = (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play) ? m_IconSimulate : m_IconStop;
+            // ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
+            if (ImGui::ImageButton((ImTextureID)icon->GetRendererID(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1), 0, ImVec4(0.0f, 0.0f, 0.0f, 0.0f), tintColor) && toobarEnabled)
+            {
+                if (m_SceneState == SceneState::Edit || m_SceneState == SceneState::Play)
+                    OnSceneSimulate();
+                else if (m_SceneState == SceneState::Simulate)
+                    OnSceneStop();
+            }
+        }
+        ImGui::PopStyleVar(2);
+        ImGui::PopStyleColor(3);
+        ImGui::End();
     }
 
     void EditorLayer::OnEvent(Event& e)
@@ -361,8 +507,21 @@ namespace Hazel
             }
             case Key::S:
             {
-                if (control && shift)
-                    SaveSceneAs();
+                if (control)
+                {
+                    if (shift)
+                        SaveSceneAs();
+                    else
+                        SaveScene();
+                }
+
+                break;
+            }
+            // Scene Commands
+            case Key::D:
+            {
+                if (control)
+                    OnDuplicateEntity();
 
                 break;
             }
@@ -401,33 +560,130 @@ namespace Hazel
 
         return false;
     }
+    
+    void EditorLayer::OnOverlayRender()
+    {
+        if (m_SceneState == SceneState::Play)
+        {
+            Entity camera = m_ActiveScene->GetPrimaryCameraEntity();
+            if (!camera)
+                return;
+
+            Renderer2D::BeginScene(camera.GetComponent<CameraComponent>().Camera, camera.GetComponent<TransformComponent>().GetTransform());
+        }
+        else
+        {
+            Renderer2D::BeginScene(m_EditorCamera);
+        }
+
+        if (m_ShowPhysicsColliders)
+        {
+            // Box Collider
+            {
+                auto view = m_ActiveScene->GetAllEntitiesWith<TransformComponent, BoxCollider2DComponent>();
+                for (auto entity : view)
+                {
+                    auto [tc, bc2d] = view.get<TransformComponent, BoxCollider2DComponent>(entity);
+
+                    glm::vec3 translation = tc.Translation + glm::vec3(bc2d.Offset, 0.001f);
+                    glm::vec3 scale = tc.Scale * glm::vec3(bc2d.Size * 2.0f, 1.0f);
+
+                    glm::mat4 transform = glm::translate(glm::mat4(1.0f), translation)
+                        * glm::rotate(glm::mat4(1.0f), tc.Rotation.z, glm::vec3(0.0f, 0.0f, 1.0f))
+                        * glm::scale(glm::mat4(1.0f), scale);
+                    Renderer2D::DrawRect(transform, glm::vec4(0, 1, 0, 1), 0.01f);
+                }
+            }
+
+            // Circle Collider
+            {
+                auto view = m_ActiveScene->GetAllEntitiesWith<TransformComponent, CircleCollider2DComponent>();
+                for (auto entity : view)
+                {
+                    auto [tc, cc2d] = view.get<TransformComponent, CircleCollider2DComponent>(entity);
+
+                    glm::vec3 translation = tc.Translation + glm::vec3(cc2d.Offset, 0.001f);
+                    glm::vec3 scale = tc.Scale * glm::vec3(cc2d.Radius * 2.0f);
+
+                    glm::mat4 transform = glm::translate(glm::mat4(1.0f), translation)
+                        * glm::scale(glm::mat4(1.0f), scale);
+                    Renderer2D::DrawCircle(transform, glm::vec4(0, 1, 0, 1), 0.05f);
+                }
+            }
+        }
+
+        Renderer2D::EndScene();
+    }
+
     void EditorLayer::NewScene()
     {
-        m_ActiveScene = CreateRef<Scene>();
-        m_ActiveScene->OnViewportResize(
+        m_EditorScene = CreateRef<Scene>();
+        m_EditorScene->OnViewportResize(
             (uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+        m_ActiveScene = m_EditorScene;
         m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+
+        m_EditorScenePath = std::filesystem::path();
     }
+
     void EditorLayer::OpenScene()
     {
         std::string filepath = FileDialogs::OpenFile("Hazel Scene (*.hazel)\0*.hazel\0");
         if (!filepath.empty())
         {
-            m_ActiveScene = CreateRef<Scene>();
-            m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-            m_SceneHierarchyPanel.SetContext(m_ActiveScene);
-
-            SceneSerializer serializer(m_ActiveScene);
-            serializer.Deserialize(filepath);
+            OpenScene(filepath);
         }
     }
+
+    void EditorLayer::OpenScene(const std::filesystem::path& path)
+    {
+        if (m_SceneState != SceneState::Edit)
+            OnSceneStop();
+
+        if (path.extension().string() != ".hazel")
+        {
+            HZ_WARN("Could not load {0} - not a scene file", path.filename().string());
+            return;
+        }
+
+        Ref<Scene> newScene = CreateRef<Scene>();
+        SceneSerializer serializer(newScene);
+        if (serializer.Deserialize(path.string()))
+        {
+            m_EditorScene = newScene;
+            m_EditorScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+            m_SceneHierarchyPanel.SetContext(m_EditorScene);
+
+            m_ActiveScene = m_EditorScene;
+            m_EditorScenePath = path;
+        }
+    }
+
+    void EditorLayer::SaveScene()
+    {
+        if (!m_EditorScenePath.empty())
+        {
+            SerializeScene(m_ActiveScene, m_EditorScenePath);
+        }
+        else
+        {
+            SaveSceneAs();
+        }
+    }
+
     void EditorLayer::SaveSceneAs()
     {
         std::string filepath = FileDialogs::SaveFile("Hazel Scene (*.hazel)\0*.hazel\0");
         if (!filepath.empty())
         {
-            SceneSerializer serializer(m_ActiveScene);
-            serializer.Serialize(filepath);
+            SerializeScene(m_ActiveScene, filepath);
+
+            m_EditorScenePath = filepath;
         }
+    }
+    void EditorLayer::SerializeScene(Ref<Scene> scene, const std::filesystem::path& path)
+    {
+        SceneSerializer serializer(scene);
+        serializer.Serialize(path.string());
     }
 }

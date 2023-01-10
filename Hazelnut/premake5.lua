@@ -35,7 +35,7 @@ project "Hazelnut"
 		defines "HZ_DEBUG"
 		runtime "Debug"
 		symbols "on"
-
+		
 	filter "configurations:Release"
 		defines "HZ_RELEASE"
 		runtime "Release"
