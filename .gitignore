@@ -3,6 +3,7 @@
 **/bin/
 !vendor/premake/bin/
 bin-int/
+Intermediates/
 
 # Hazel files
 *.log
@@ -13,6 +14,7 @@ bin-int/
 **.vcxproj
 **.vcxproj.filters
 **.vcxproj.user
+**.csproj
 
 **HazelProfile-*.json
 
