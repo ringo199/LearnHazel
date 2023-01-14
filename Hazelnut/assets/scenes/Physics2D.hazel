@@ -1,14 +1,99 @@
 Scene: Untitled
 Entities:
-  - Entity: 7814561840920093699
+  - Entity: 15073293081440668049
+    TagComponent:
+      Tag: Empty Entity
+    TransformComponent:
+      Translation: [5.20036602, 0.0310617685, 2.98023295e-08]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    CircleRendererComponent:
+      Color: [0.127905071, 0.849420846, 0.239336088, 1]
+      Thickness: 0.125
+      Fade: 0.136999995
+    Rigidbody2DComponent:
+      BodyType: Dynamic
+      FixedRotation: false
+    CircleCollider2DComponent:
+      Offset: [0, 0]
+      Radius: 0.5
+      Density: 1
+      Friction: 0.5
+      Restitution: 1
+      RestitutionThreshold: 0.5
+  - Entity: 1902459475693630775
+    TagComponent:
+      Tag: Floor
+    TransformComponent:
+      Translation: [0.412562251, -2.02272034, 0]
+      Rotation: [0, 0, 0]
+      Scale: [14.836647, 0.46067813, 0.999998987]
+    SpriteRendererComponent:
+      Color: [0.949806929, 0.455301404, 0.0660097376, 1]
+      TilingFactor: 1
+    Rigidbody2DComponent:
+      BodyType: Static
+      FixedRotation: false
+    BoxCollider2DComponent:
+      Offset: [0, 0]
+      Size: [0.5, 0.5]
+      Density: 1
+      Friction: 0.5
+      Restitution: 0
+      RestitutionThreshold: 0.5
+  - Entity: 10259837523233052609
+    TagComponent:
+      Tag: Empty Entity
+    TransformComponent:
+      Translation: [-3.02873254, -1.61724842, 2.98023224e-08]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    CircleRendererComponent:
+      Color: [0.127905071, 0.849420846, 0.239336088, 1]
+      Thickness: 0.125
+      Fade: 0.136999995
+    Rigidbody2DComponent:
+      BodyType: Dynamic
+      FixedRotation: false
+    CircleCollider2DComponent:
+      Offset: [0, 0]
+      Radius: 0.5
+      Density: 1
+      Friction: 0.5
+      Restitution: 1
+      RestitutionThreshold: 0.5
+  - Entity: 231610667718084730
+    TagComponent:
+      Tag: Camera
+    TransformComponent:
+      Translation: [-0.890311837, -1.06450129, 4.99711323]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    CameraComponent:
+      Camera:
+        ProjectionType: 0
+        PerspectiveFOV: 0.785398185
+        PerspectiveNear: 0.00999999978
+        PerspectiveFar: 1000
+        OrthographicSize: 10
+        OrthographicNear: -1
+        OrthographicFar: 1
+      Primary: true
+      FixedAspectRatio: false
+    ScriptComponent:
+      ClassName: Sandbox.Camera
+  - Entity: 788544595174791488
     TagComponent:
       Tag: Sprite
     TransformComponent:
-      Translation: [0.20555675, 0.577590466, 0.0225147754]
-      Rotation: [0, 0, 0.447919488]
-      Scale: [0.361159712, 0.375572056, 0.848135769]
+      Translation: [-1.51772904, -0.0852727294, 0.0251211785]
+      Rotation: [0, 0, 0]
+      Scale: [0.361159682, 0.375572085, 0.848135769]
+    ScriptComponent:
+      ClassName: Sandbox.Player
     SpriteRendererComponent:
       Color: [1, 1, 1, 1]
+      TexturePath: assets\textures\QQ½ØÍ¼20221212131557.png
       TilingFactor: 1
     Rigidbody2DComponent:
       BodyType: Dynamic
@@ -40,16 +125,15 @@ Entities:
       Friction: 0.5
       Restitution: 0
       RestitutionThreshold: 0.5
-  - Entity: 788544595174791488
+  - Entity: 7814561840920093699
     TagComponent:
       Tag: Sprite
     TransformComponent:
-      Translation: [-0.603000939, -0.813954711, 0.0251211785]
-      Rotation: [0, 0, 2.03094006]
-      Scale: [0.361159682, 0.375572085, 0.848135769]
+      Translation: [3.47746515, 0.872217834, 0.0225147754]
+      Rotation: [0, 0, 0.447919488]
+      Scale: [0.361159712, 0.375572056, 0.848135769]
     SpriteRendererComponent:
       Color: [1, 1, 1, 1]
-      TexturePath: assets\textures\QQ½ØÍ¼20221212131557.png
       TilingFactor: 1
     Rigidbody2DComponent:
       BodyType: Dynamic
@@ -60,84 +144,4 @@ Entities:
       Density: 0.879999995
       Friction: 0.100000001
       Restitution: 0.819999993
-      RestitutionThreshold: 0.5
-  - Entity: 231610667718084730
-    TagComponent:
-      Tag: Camera
-    TransformComponent:
-      Translation: [-0.890311837, -1.06450129, 4.99711323]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    CameraComponent:
-      Camera:
-        ProjectionType: 0
-        PerspectiveFOV: 0.785398185
-        PerspectiveNear: 0.00999999978
-        PerspectiveFar: 1000
-        OrthographicSize: 10
-        OrthographicNear: -1
-        OrthographicFar: 1
-      Primary: true
-      FixedAspectRatio: false
-  - Entity: 10259837523233052609
-    TagComponent:
-      Tag: Empty Entity
-    TransformComponent:
-      Translation: [-3.02873254, -1.61724842, 2.98023224e-08]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    CircleRendererComponent:
-      Color: [0.127905071, 0.849420846, 0.239336088, 1]
-      Thickness: 0.125
-      Fade: 0.136999995
-    Rigidbody2DComponent:
-      BodyType: Dynamic
-      FixedRotation: false
-    CircleCollider2DComponent:
-      Offset: [0, 0]
-      Radius: 0.5
-      Density: 1
-      Friction: 0.5
-      Restitution: 1
-      RestitutionThreshold: 0.5
-  - Entity: 1902459475693630775
-    TagComponent:
-      Tag: Floor
-    TransformComponent:
-      Translation: [0.412562251, -2.02272034, 0]
-      Rotation: [0, 0, 0.447081655]
-      Scale: [6.74196863, 0.46067813, 0.999998987]
-    SpriteRendererComponent:
-      Color: [0.949806929, 0.455301404, 0.0660097376, 1]
-      TilingFactor: 1
-    Rigidbody2DComponent:
-      BodyType: Static
-      FixedRotation: false
-    BoxCollider2DComponent:
-      Offset: [0, 0]
-      Size: [0.5, 0.5]
-      Density: 1
-      Friction: 0.5
-      Restitution: 0
-      RestitutionThreshold: 0.5
-  - Entity: 15073293081440668049
-    TagComponent:
-      Tag: Empty Entity
-    TransformComponent:
-      Translation: [-2.03705931, 0, 2.98023224e-08]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    CircleRendererComponent:
-      Color: [0.127905071, 0.849420846, 0.239336088, 1]
-      Thickness: 0.125
-      Fade: 0.136999995
-    Rigidbody2DComponent:
-      BodyType: Dynamic
-      FixedRotation: false
-    CircleCollider2DComponent:
-      Offset: [0, 0]
-      Radius: 0.5
-      Density: 1
-      Friction: 0.5
-      Restitution: 1
       RestitutionThreshold: 0.5
